@@ -9,6 +9,7 @@ import struct
 from math import cos, sin, pi
 import time
 import sys
+import serial
 
 num_samples = 512
 
@@ -118,6 +119,12 @@ def generate_RGB_values(brightness_stream, color_stream):
 		colors = color_stream.next()
 		yield map(to_rgb, zip(brightnesses, colors))
 
+teensy_file = "/dev/tty.usbmodem12341"
+teensy = serial.Serial(teensy_file, 115200)
+def send_to_teensy(strip):
+	command = ''.join(chr(r)+chr(g)+chr(b) for r,g,b in strip)
+	teensy.write(command)
+
 if __name__ == '__main__':
 	# Raw frequency data
 	fft_stream = to_fft(audio_stream)
@@ -139,3 +146,4 @@ if __name__ == '__main__':
 			sys.stdout.write("\n")
 			sys.stdout.flush()
 		print
+		send_to_teensy(strip_rgb)

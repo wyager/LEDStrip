@@ -15,7 +15,7 @@ extern "C"{
 #define LED_CONFIG	(DDRD |= (1<<6))
 #define LED_ON		(PORTD |= (1<<6))
 #define LED_OFF		(PORTD &= ~(1<<6))
-#define LED_TOGGLE	(PIND = (1<<6)) //Fast IO toggle trick
+#define LED_TOGGLE	(PORTD ^= (1<<6)) 
 #define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
 
 void parse_and_execute_command(const char *buf, uint8_t num);
@@ -26,15 +26,19 @@ void send_byte_as_hex(const uint8_t byte);
 int main(void)
 {
 	CPU_PRESCALE(0);
+	LED_CONFIG;
+	LED_ON;
 
 	strip_data strips[1] = {};
 	LPD8806_IO_init();
 
 	usb_init();
 	while (!usb_configured()) /* wait */ ;
+	while (!(usb_serial_get_control() & USB_SERIAL_DTR)) /* wait */ ;
+	usb_serial_flush_input();
 	
 	while (1) {
-		while (!(usb_serial_get_control() & USB_SERIAL_DTR)) /* wait */ ;
+		
 
 		for(uint8_t pixel = 0; pixel < 32; pixel++){
 			uint8_t r = usb_serial_getchar();
@@ -44,6 +48,8 @@ int main(void)
 		}
 
 		LPD8806_send(strips, 1);
+		usb_serial_putchar('a');
+		LED_TOGGLE;
 	}
 }
 

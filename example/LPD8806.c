@@ -1,8 +1,8 @@
 #include "LPD8806.h"
 #include <avr/io.h>
 
-#define CLOCKPIN 5
-#define DATAPIN 6
+#define CLOCKPIN 4
+#define DATAPIN 5
 inline void set_clock_high(){ PORTD |= 1 << CLOCKPIN; }
 inline void set_clock_low(){ PORTD &= ~(1 << CLOCKPIN); }
 inline void set_data_high(){ PORTD |= 1 << DATAPIN; }
