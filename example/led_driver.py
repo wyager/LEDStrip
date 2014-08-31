@@ -9,14 +9,14 @@ import serial
 
 ### Audio options
 sample_rate = 44100	# Audio sample rate
-input_decimation = 4 # For max frequency 44100/(2*2) = 11025Hz
+input_decimation = 8 # For max frequency 44100/(2*2) = 11025Hz
 fft_samples = 256	# FFT size. *Always* make this a power of 2
 num_leds = 32 # The number of LEDs on the strip
-volume_smoothing_decay = .9 # The rate at which the calculated volume falls off
-led_smoothing_decay = .9 # The rate at which the calculated freqs fall off
+volume_smoothing_decay = .8 # The rate at which the calculated volume falls off
+led_smoothing_decay = .8 # The rate at which the calculated freqs fall off
 ### Color pattern options
-theta_frequency = 2.0/60 # Twice a minute
-phi_frequency = 7.0/60 # 7 times a minute
+theta_frequencies = [2.0/60, 3.0/60] # 2/3 times a minute
+phi_frequencies   = [5.0/60, 7.0/60] # 5/7 times a minute
 delta_t_per_led = 1.0 # Each LED is 1 second ahead of the last
 ### Teensy options
 teensy_file = "/dev/ttyUSBmodem666" # The Teensy's serial device
@@ -79,8 +79,10 @@ def get_led_colors():
 			# Current time/x-coord for this LED
 			t = 2 * pi * (time.time() + delta_t_per_led*led)
 			# From this time, generate a point on the 3-sphere's positive quad
-			theta = sin(t*theta_frequency) * pi/4 + pi/4
-			phi   = sin(t*phi_frequency)   * pi/4 + pi/4
+			thetas = [sin(t*f) * pi/4 + pi/4 for f in theta_frequencies]
+			theta  = sum(thetas)/len(thetas)
+			phis   = [sin(t*f) * pi/4 + pi/4 for f in phi_frequencies]
+			phi    = sum(phis)/len(phis)
 			x = sin(theta) * cos(phi)
 			y = sin(theta) * sin(phi)
 			z = cos(theta)
@@ -104,10 +106,16 @@ def get_led_RGB_values():
 		strip_colors = colors.next()
 		yield [to_rgb(mag,color) for mag,color in zip(strip_mags,strip_colors)]
 
-teensy = serial.Serial.open(teensy_file)
+#teensy = serial.Serial.open(teensy_file)
 for RGBs in get_led_RGB_values():
 	for r,g,b in RGBs:
-		teensy.write(chr(r))
-		teensy.write(chr(g))
-		teensy.write(chr(b))
-	teensy.flush()
+		sys.stdout.write("r"*r)
+		sys.stdout.write("g"*g)
+		sys.stdout.write("b"*b)
+		sys.stdout.write("\n")
+		sys.stdout.flush()
+		#teensy.write(chr(r))
+		#teensy.write(chr(g))
+		#teensy.write(chr(b))
+	#teensy.flush()
+	print
