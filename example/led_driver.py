@@ -42,7 +42,7 @@ num_leds = 32
 # Takes the stream of FFT values, discards an arbitrary fraction of them,
 # and fits the rest to the LEDs.
 def scale_to_LEDs(fft_stream):
-	frequency_range = 4 # Only use 1/4th of the FFT's output
+	frequency_range = 8 # Only use 1/4th of the FFT's output
 	for sample in fft_stream:
 		# Cut off the higher frequencies we don't care about any more
 		sample = sample[0:len(sample)/frequency_range]
@@ -51,6 +51,14 @@ def scale_to_LEDs(fft_stream):
 		# Sum the FFT bins into each LED's value
 		led_magnitudes = sample.reshape(num_leds, scale_factor).sum(axis=1)
 		yield led_magnitudes
+
+# Adds a constant to all values in an FFT output.
+# This is equivalent to adding white noise to the audio signal.
+# This prevents the LEDs from flickering from with a weak audio signal
+def inject_white_noise(fft_stream):
+	baseline = 5000
+	for sample in fft_stream:
+		yield sample + baseline
 
 # Smooths the brightness values going to the LEDs, and scales them
 # according to ambient volume.
@@ -93,15 +101,17 @@ def generate_led_colors():
 			led_colors[led] = (x,y,z)
 		yield led_colors
 
+# Takes in a stream of brightnesses and a stream of colors,
+# and outputs a stream of integer RGB values that can be sent
+# to the LEDs.
 def generate_RGB_values(brightness_stream, color_stream):
 	brightness_booster = 5.0 # Arbitrary brightness tuner
 	max_rgb = 127 # Max brightness the LEDs can do
 	def to_rgb((brightness, color)):
-		brightness = max_rgb * brightness * brightness_booster
+		brightness = min(max_rgb * brightness * brightness_booster, max_rgb)
 		r, g, b = color
 		r, g, b = r/(r+g+b), g/(r+g+b), b/(r+g+b)
 		r, g, b = int(r*brightness), int(g*brightness), int(b*brightness)
-		r, g, b = min(r, max_rgb), min(g, max_rgb), min(b, max_rgb)
 		return (r,g,b)
 	while True:
 		brightnesses = brightness_stream.next()
@@ -113,6 +123,8 @@ if __name__ == '__main__':
 	fft_stream = to_fft(audio_stream)
 	# Frequency data fitted to LEDs
 	brightness_stream = scale_to_LEDs(fft_stream)
+	# Introduce white noise (baseline brightness)
+	brightness_stream = inject_white_noise(brightness_stream)
 	# Smoothed fitted frequency data
 	smoothed_brightness_stream = smooth_LED_brightness(brightness_stream)
 	# Cool colors for each LED. Changes over time
