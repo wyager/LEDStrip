@@ -17,22 +17,18 @@
 #define KMAG  "\x1B[35m"
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
-void set_clock_high(){printf("%sset clock high\n", KGRN);}
-void set_clock_low() {printf("%sset clock low\n" , KRED);}
-void set_clock_out() {printf("%sset clock out\n" , KWHT);}
-void set_data_high() {printf("%sset data  high\n", KYEL);}
-void set_data_low()  {printf("%sset data  low\n" , KBLU);}
-void set_data_out()  {printf("%sset data  out\n" , KWHT);}
-void clock_strobe(){set_clock_high(); set_clock_low();}
+void set_clock_high(void){printf("%sset clock high\n", KGRN);}
+void set_clock_low(void) {printf("%sset clock low\n" , KRED);}
+void set_clock_out(void) {printf("%sset clock out\n" , KWHT);}
+void set_data_high(void) {printf("%sset data  high\n", KYEL);}
+void set_data_low(void)  {printf("%sset data  low\n" , KBLU);}
+void set_data_out(void)  {printf("%sset data  out\n" , KWHT);}
+void clock_strobe(void)  {set_clock_high(); set_clock_low();}
 // Prepare teensy pins and then prepare the strip
 void LPD8806_IO_init(){
   set_data_out();
   set_clock_out();
-  set_clock_low();
-  set_data_low();
-  for(size_t i = 0; i<8; i++){
-    clock_strobe();
-  }
+  LPD8806_send_byte(0);
 }
 
 void LPD8806_send_byte(uint8_t the_byte){
