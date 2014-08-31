@@ -36,7 +36,7 @@ int main(void)
 	while (!usb_configured()) /* wait */ ;
 	while (!(usb_serial_get_control() & USB_SERIAL_DTR)) /* wait */ ;
 	usb_serial_flush_input();
-	
+
 	while (1) {
 		
 
@@ -48,7 +48,6 @@ int main(void)
 		}
 
 		LPD8806_send(strips, 1);
-		usb_serial_putchar('a');
 		LED_TOGGLE;
 	}
 }
