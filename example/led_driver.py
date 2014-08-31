@@ -7,10 +7,14 @@ import time
 import struct
 import serial
 
+""" Stop using simple decimation like this. Looks like it's only safe to
+do so if I low-pass the audio first. Just do an excessive FFT and only take
+a fraction of it."""
+
 ### Audio options
 sample_rate = 44100	# Audio sample rate
-input_decimation = 8 # For max frequency 44100/(2*2) = 11025Hz
-fft_samples = 256	# FFT size. *Always* make this a power of 2
+fft_samples = 512	# FFT size. *Always* make this a power of 2
+fft_samples_used = 32 # Use only this portion of the FFT (at lower frequencies)
 num_leds = 32 # The number of LEDs on the strip
 volume_smoothing_decay = .8 # The rate at which the calculated volume falls off
 led_smoothing_decay = .8 # The rate at which the calculated freqs fall off
@@ -18,6 +22,7 @@ led_smoothing_decay = .8 # The rate at which the calculated freqs fall off
 theta_frequencies = [2.0/60, 3.0/60] # 2/3 times a minute
 phi_frequencies   = [5.0/60, 7.0/60] # 5/7 times a minute
 delta_t_per_led = 1.0 # Each LED is 1 second ahead of the last
+brightness_booster = 5.0 # Brightness scale factor
 ### Teensy options
 teensy_file = "/dev/ttyUSBmodem666" # The Teensy's serial device
 
@@ -26,7 +31,7 @@ stream = pa.PyAudio().open(format=pa.paInt16, \
 							channels=1, \
 							rate=sample_rate, \
 							input=True, \
-							frames_per_buffer=fft_samples*input_decimation)
+							frames_per_buffer=fft_samples)
 
 # Returns an iterator.
 # The iterator outputs arrays with one element for each LED.
@@ -37,15 +42,11 @@ def get_led_magnitudes():
 	moving_avg_volume = 1.0 # Used to scale the output depending on volume
 	moving_avg_leds = np.array([0.0]*32)
 	while True:
-		# Read all the input data. Take enough samples that we can 
-		# drop all the ones we don't want.
-		samples = stream.read(fft_samples*input_decimation) 
+		# Read all the input data. 
+		samples = stream.read(fft_samples) 
 		# Convert input data to numbers
 		samples = [struct.unpack('<h',samples[2*i:2*i+2])[0] \
-					for i in range(fft_samples*input_decimation)]
-		# Drop every nth sample, 
-		# since we only care about frequencies up to nyquist/n
-		samples = samples[::input_decimation] 
+									for i in range(fft_samples)]
 		# Take the FFT of the input signal
 		frequencies = fft.fft(samples) 
 		# Convert from complex to real magnitudes
@@ -53,6 +54,7 @@ def get_led_magnitudes():
 		# Sum negative and positive frequency components
 		magnitudes = frequencies[0:fft_samples/2]
 		magnitudes[1:] += frequencies[fft_samples/2 + 1:][::-1]
+		magnitudes = magnitudes[0:fft_samples_used]
 		# How many FFT bins do we want to lump into a single LED?
 		scale_factor = len(magnitudes) / num_leds
 		# Sum the FFT bins into each LED's value
@@ -95,9 +97,11 @@ def get_led_colors():
 # and B) the color at this time.
 def get_led_RGB_values():
 	def to_rgb(magnitude, color):
+		brightness = 127 * magnitude * brightness_booster
 		r, g, b = color
-		r, g, b = r * magnitude, g * magnitude, b * magnitude
-		r, g, b = min(r * 127, 127), min(g * 127, 127), min(b * 127, 127)
+		r, g, b = r/(r+g+b), g/(r+g+b), b/(r+g+b)
+		r, g, b = int(r*brightness), int(g*brightness), int(b*brightness)
+		r, g, b = min(r, 127), min(g, 127), min(b, 127)
 		return (r,g,b)
 	magnitudes = get_led_magnitudes()
 	colors = get_led_colors()
