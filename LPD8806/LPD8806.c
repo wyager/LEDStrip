@@ -11,10 +11,12 @@ inline void set_data_out(void){ DDRD |= 1 << DATAPIN; }
 inline void set_clock_out(void){ DDRD |= 1 << CLOCKPIN; }
 void clock_strobe(void)  {set_clock_high(); set_clock_low();}
 // Prepare teensy pins and then prepare the strip
-void LPD8806_IO_init(){
+void LPD8806_IO_init(size_t num_strips){
   set_data_out();
   set_clock_out();
-  LPD8806_send_byte(0);
+  for (size_t i = 0; i < num_strips; i++){
+    LPD8806_send_byte(0);
+  }
 }
 
 void LPD8806_send_byte(uint8_t the_byte){

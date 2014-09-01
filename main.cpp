@@ -29,8 +29,9 @@ int main(void)
 	LED_CONFIG;
 	LED_ON;
 
-	strip_data strips[1] = {};
-	LPD8806_IO_init();
+	const size_t num_strips = 1;
+	strip_data strips[num_strips] = {};
+	LPD8806_IO_init(num_strips);
 
 	usb_init();
 	while (!usb_configured()) /* wait */ ;
@@ -47,7 +48,7 @@ int main(void)
 			strips[0].pixels[pixel] = {r, g, b};
 		}
 
-		LPD8806_send(strips, 1);
+		LPD8806_send(strips, num_strips);
 		LED_TOGGLE;
 	}
 }
