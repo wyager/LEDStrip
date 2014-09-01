@@ -120,10 +120,10 @@ def generate_RGB_values(brightness_stream, color_stream):
 		yield map(to_rgb, zip(brightnesses, colors))
 
 teensy_file = "/dev/tty.usbmodem12341"
-teensy = serial.Serial(teensy_file, 115200)
+#teensy = serial.Serial(teensy_file, 115200)
 def send_to_teensy(strip):
 	command = ''.join(chr(r)+chr(g)+chr(b) for r,g,b in strip)
-	teensy.write(command)
+	#teensy.write(command)
 
 if __name__ == '__main__':
 	# Raw frequency data

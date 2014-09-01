@@ -3,7 +3,7 @@ TARGET = main
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC =	LPD8806.c \
+SRC =	LPD8806/LPD8806.c \
 	usb_serial.c
 
 

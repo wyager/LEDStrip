@@ -3,12 +3,12 @@
 
 #define CLOCKPIN 4
 #define DATAPIN 5
-inline void set_clock_high(){ PORTD |= 1 << CLOCKPIN; }
-inline void set_clock_low(){ PORTD &= ~(1 << CLOCKPIN); }
-inline void set_data_high(){ PORTD |= 1 << DATAPIN; }
-inline void set_data_low(){ PORTD &= ~(1 << DATAPIN); }
-inline void set_data_out(){ DDRD |= 1 << DATAPIN; }
-inline void set_clock_out(){ DDRD |= 1 << CLOCKPIN; }
+inline void set_clock_high(void){ PORTD |= 1 << CLOCKPIN; }
+inline void set_clock_low(void){ PORTD &= ~(1 << CLOCKPIN); }
+inline void set_data_high(void){ PORTD |= 1 << DATAPIN; }
+inline void set_data_low(void){ PORTD &= ~(1 << DATAPIN); }
+inline void set_data_out(void){ DDRD |= 1 << DATAPIN; }
+inline void set_clock_out(void){ DDRD |= 1 << CLOCKPIN; }
 void clock_strobe(void)  {set_clock_high(); set_clock_low();}
 // Prepare teensy pins and then prepare the strip
 void LPD8806_IO_init(){

@@ -10,7 +10,7 @@ extern "C"{
 #include <avr/io.h>
 #include <util/delay.h>
 #include "usb_serial.h"
-#include "LPD8806.h"
+#include "LPD8806/LPD8806.h"
 }
 #define LED_CONFIG	(DDRD |= (1<<6))
 #define LED_ON		(PORTD |= (1<<6))
