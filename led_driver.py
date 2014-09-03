@@ -11,113 +11,115 @@ import time
 import sys
 import serial
 
-num_samples = 512
-
 audio_stream = pa.PyAudio().open(format=pa.paInt16, \
 								channels=1, \
 								rate=44100, \
 								input=True, \
-								frames_per_buffer=num_samples)
+								frames_per_buffer=512)
 
-# Converts the audio stream to a stream of FFT values
-# The FFT values are num_samples/2 wide.
-# They have been converted from complex positive and negative to real positive.
-def to_fft(audio_stream):
+# Convert the audio data to numbers, num_samples at a time.
+def read_audio(audio_stream, num_samples):
 	while True:
 		# Read all the input data. 
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
 		samples = [struct.unpack('<h',samples[2*i:2*i+2])[0] \
 									for i in range(num_samples)]
+		yield samples
+
+# Convert the audio stream into a stream of FFTs
+def to_fft(audio_stream):
+	for samples in audio_stream:
 		# Take the FFT of the input signal
 		frequencies = fft.fft(samples) 
 		# Convert from complex to real magnitudes
 		frequencies = np.abs(frequencies)
 		# Sum negative and positive frequency components
-		magnitudes = frequencies[0:num_samples/2]
-		magnitudes[1:] += frequencies[num_samples/2 + 1:][::-1]
+		magnitudes = frequencies[0:len(samples)/2]
+		magnitudes[1:] += frequencies[len(samples)/2 + 1:][::-1]
 		yield magnitudes
 
-num_leds = 32
-
-# Takes the stream of FFT values, discards an arbitrary fraction of them,
-# and fits the rest to the LEDs.
-def scale_to_LEDs(fft_stream):
-	frequency_range = 8 # Only use 1/4th of the FFT's output
+# "Stretch" the FFT to fit the LEDs, and use only the bottom
+# 1/decimation of the FFT bins
+def scale_to_LEDs(fft_stream, num_leds, decimation):
 	for sample in fft_stream:
 		# Cut off the higher frequencies we don't care about any more
-		sample = sample[0:len(sample)/frequency_range]
+		sample = sample[0:len(sample)/decimation]
 		# How many FFT bins do we want to lump into a single LED?
 		scale_factor = len(sample)/num_leds
 		# Sum the FFT bins into each LED's value
 		led_magnitudes = sample.reshape(num_leds, scale_factor).sum(axis=1)
 		yield led_magnitudes
 
-# Adds a constant to all values in an FFT output.
-# This is equivalent to adding white noise to the audio signal.
-# This prevents the LEDs from flickering from with a weak audio signal
-def inject_white_noise(fft_stream):
-	baseline = 5000
+# Inject a certain amount of white noise into the FFT to drown out quiet sounds
+def inject_white_noise(fft_stream, baseline):
 	for sample in fft_stream:
 		yield sample + baseline
 
-# Smooths the brightness values going to the LEDs, and scales them
-# according to ambient volume.
-def smooth_LED_brightness(led_stream):
-	volume_falloff = .9
-	brightness_falloff = .8
-	moving_avg_volume = 1.0
-	moving_avg_brightness = np.array([0.0]*num_leds)
-	for brightnesses in led_stream:
-		# Keep the total LED brightness around 1.0
-		moving_avg_volume *= volume_falloff
-		moving_avg_volume += sum(brightnesses)*(1.0 - volume_falloff)
-		brightnesses /= moving_avg_volume
-		# Smooth each individual LED
-		moving_avg_brightness *= brightness_falloff
-		moving_avg_brightness += brightnesses*(1.0 - brightness_falloff)
-		yield moving_avg_brightness
+# Normalize a data stream so the sum of each array in the stream approaches 1
+def normalize_all(data_stream, falloff):
+	norm = None
+	for data in data_stream:
+		norm = sum(data) if norm == None else norm
+		norm *= falloff
+		norm += sum(data)*(1.0 - falloff)
+		data /= norm
+		yield data
 
-# This iterator outputs an array containing a color for each LED.
-# The colors are time-based, and look cool
-# The colors are in the form of (r,g,b) tuples.
-def generate_led_colors():
-	theta_frequencies = [2.0/60, 3.0/60] # 2 & 3 times a minute
-	phi_frequencies   = [5.0/60, 7.0/60] # 5 & 7 times a minute
-	delta_t_per_led = 1.0 # Each LED is one second ahead of the last
-	while True:
-		led_colors = [(0,0,0)] * num_leds
-		for led in range(num_leds):
-			# We need to angles, in range 0 to pi/2
-			# Current time/x-coord for this LED
-			t = 2 * pi * (time.time() + delta_t_per_led*led)
-			# From this time, generate a point on the 3-sphere's positive quad
-			thetas = [sin(t*f) * pi/4 + pi/4 for f in theta_frequencies]
-			theta  = sum(thetas)/len(thetas)
-			phis   = [sin(t*f) * pi/4 + pi/4 for f in phi_frequencies]
-			phi    = sum(phis)/len(phis)
-			x = sin(theta) * cos(phi)
-			y = sin(theta) * sin(phi)
-			z = cos(theta)
-			led_colors[led] = (x,y,z)
-		yield led_colors
+# Smooth each individual element in the data stream
+def smooth(data_stream, falloff):
+	smoothed = None
+	for data in data_stream:
+		smoothed = data if smoothed == None else smoothed
+		smoothed *= falloff
+		smoothed += data*(1.0 - falloff)
+		yield smoothed
 
-# Takes in a stream of brightnesses and a stream of colors,
-# and outputs a stream of integer RGB values that can be sent
-# to the LEDs.
-def generate_RGB_values(brightness_stream, color_stream):
-	brightness_booster = 5.0 # Arbitrary brightness tuner
-	max_rgb = 127 # Max brightness the LEDs can do
-	def to_rgb((brightness, color)):
-		brightness = min(max_rgb * brightness * brightness_booster, max_rgb)
-		r, g, b = color
-		r, g, b = r/(r+g+b), g/(r+g+b), b/(r+g+b)
-		r, g, b = int(r*brightness), int(g*brightness), int(b*brightness)
-		return (r,g,b)
+# Generates a waveform with range [0,pi/2]
+# Based on the sums of sines of the given frequencies
+def waveform(frequencies):
+	def f(x):
+		total = sum([sin(f*2*pi*x)*pi/4 + pi/4 for f in frequencies])
+		return total / len(frequencies)
+	return f
+
+# Makes a color based on time t
+def color(t):
+	theta = waveform([2.0/60, 3.0/60])(t)
+	phi = waveform([5.0/60, 7.0/60])(t)
+	x = sin(theta) * cos(phi)
+	y = sin(theta) * sin(phi)
+	z = cos(theta)
+	return (x,y,z)
+
+# Makes a list of colors. Each LED's color function is offset by 1 second 
+def generate_colors(num_leds):
 	while True:
-		brightnesses = brightness_stream.next()
+		t = time.time()
+		yield [color(t+dt) for dt in range(num_leds)]
+
+# Make the components of a color add up to 1
+def normalize_colors(color_stream):
+	for colors in color_stream:
+		yield [(r/(r+g+b), g/(r+g+b), b/(r+g+b)) for r,g,b in colors]
+
+# Multiply each LED's color by its magnitude and a scalar
+def multiply_colors(color_stream, magnitude_stream, scalar):
+	while True:
 		colors = color_stream.next()
-		yield map(to_rgb, zip(brightnesses, colors))
+		mags = magnitude_stream.next()
+		def scale((r,g,b), magnitude):
+			magnitude = scalar * magnitude
+			return (r*magnitude),(g*magnitude),(b*magnitude)
+		yield [scale(color,mag) for color,mag in zip(colors,mags)]
+
+# Max the colors out at the cap value and turn them to integers
+def cap_colors(color_stream, cap):
+	for colors in color_stream:
+		colors = [(min(r, cap), min(g, cap), min(b, cap)) for r,g,b in colors]
+		colors = [(int(r), int(g), int(b)) for r,g,b in colors]
+		yield colors
+
 
 teensy_file = "/dev/tty.usbmodem12341"
 #teensy = serial.Serial(teensy_file, 115200)
@@ -126,19 +128,19 @@ def send_to_teensy(strip):
 	#teensy.write(command)
 
 if __name__ == '__main__':
-	# Raw frequency data
-	fft_stream = to_fft(audio_stream)
-	# Frequency data fitted to LEDs
-	brightness_stream = scale_to_LEDs(fft_stream)
-	# Introduce white noise (baseline brightness)
-	brightness_stream = inject_white_noise(brightness_stream)
-	# Smoothed fitted frequency data
-	smoothed_brightness_stream = smooth_LED_brightness(brightness_stream)
-	# Cool colors for each LED. Changes over time
-	color_stream = generate_led_colors()
-	# Actual RGB values
-	rgb_stream = generate_RGB_values(smoothed_brightness_stream, color_stream)
-	for strip_rgb in rgb_stream:
+	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
+	scaled_fft = scale_to_LEDs(fft_stream, num_leds = 32, decimation = 8)
+	noised_fft = inject_white_noise(scaled_fft, baseline = 5000)
+	normalized = normalize_all(noised_fft, falloff = .8)
+	smooth_fft = smooth(normalized, falloff = .8)
+
+	raw_colors = normalize_colors(generate_colors(32))
+	
+	fft_colors = multiply_colors(raw_colors, smooth_fft, scalar = 127*5.0)
+
+	led_colors = cap_colors(fft_colors, cap = 32)
+
+	for strip_rgb in led_colors:
 		for r,g,b in strip_rgb:
 			sys.stdout.write("r"*r)
 			sys.stdout.write("g"*g)
