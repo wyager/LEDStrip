@@ -27,6 +27,7 @@ void LPD8806_send_byte(uint8_t the_byte){
     clock_strobe();
   }
 }
+
 void LPD8806_send(strip_data* strips, size_t num_strips){
   for(size_t i = 0; i < num_strips; i++){
     strip_data* strip = &strips[i];
