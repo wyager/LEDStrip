@@ -10,6 +10,7 @@ from math import cos, sin, pi
 import time
 import sys
 import serial
+from colorsys import hsv_to_rgb
 
 audio_stream = pa.PyAudio().open(format=pa.paInt16, \
 								channels=1, \
@@ -75,28 +76,28 @@ def smooth(data_stream, falloff):
 		smoothed += data*(1.0 - falloff)
 		yield smoothed
 
-# Generates a waveform with range [0,pi/2]
-# Based on the sums of sines of the given frequencies
-def waveform(frequencies):
-	def f(x):
-		total = sum([sin(f*2*pi*x)*pi/4 + pi/4 for f in frequencies])
-		return total / len(frequencies)
-	return f
+def g_0(t, n):
+	nf = 0.1
+	delta = lambda t : sin(t*.03)*4
+	return sin(nf*n + delta(t))
+def g_1(t, n):
+	nf = 0.06
+	delta = lambda t : sin(t*.1)
+	return sin(nf*n + delta(t))
 
-# Makes a color based on time t
-def color(t):
-	theta = waveform([2.0/60, 3.0/60])(t)
-	phi = waveform([5.0/60, 7.0/60])(t)
-	x = sin(theta) * cos(phi)
-	y = sin(theta) * sin(phi)
-	z = cos(theta)
-	return (x,y,z)
+waveforms = [g_0, g_1]
+
+def waveform(t, n):
+	return sum([g(t,n) for g in waveforms])
+
 
 # Makes a list of colors. Each LED's color function is offset by 1 second 
 def generate_colors(num_leds):
 	while True:
 		t = time.time()
-		yield [color(t+dt) for dt in range(num_leds)]
+		values = [waveform(t, n) % 1.0 for n in range(num_leds)]
+		colors = [hsv_to_rgb(y, 1, 1) for y in values]
+		yield colors
 
 # Make the components of a color add up to 1
 def normalize_colors(color_stream):
