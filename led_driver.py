@@ -149,11 +149,4 @@ if __name__ == '__main__':
 	led_colors = cap_colors(fft_colors, cap = 127.0)
 
 	for strip_rgb in led_colors:
-		for r,g,b in strip_rgb:
-			sys.stdout.write("r"*r)
-			sys.stdout.write("g"*g)
-			sys.stdout.write("b"*b)
-			sys.stdout.write("\n")
-			sys.stdout.flush()
-		print
 		send_to_teensy(strip_rgb)

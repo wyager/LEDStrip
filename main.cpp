@@ -26,8 +26,6 @@ void send_byte_as_hex(const uint8_t byte);
 int main(void)
 {
 	CPU_PRESCALE(0);
-	LED_CONFIG;
-	LED_ON;
 
 	const size_t num_strips = 1;
 	strip_data strips[num_strips] = {};
@@ -39,7 +37,7 @@ int main(void)
 	usb_serial_flush_input();
 
 	while (1) {
-
+		
 		for(uint8_t pixel = 0; pixel < 32; pixel++){
 			while(!usb_serial_available()){};
 			uint8_t r = usb_serial_getchar();
@@ -51,7 +49,6 @@ int main(void)
 		}
 
 		LPD8806_send(strips, num_strips);
-		LED_TOGGLE;
 	}
 }
 
