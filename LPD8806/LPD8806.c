@@ -30,9 +30,8 @@ void LPD8806_send_byte(uint8_t the_byte){
 
 void LPD8806_send(strip_data* strips, size_t num_strips){
   for(size_t i = 0; i < num_strips; i++){
-    strip_data* strip = &strips[i];
     for(size_t px = 0; px < 32; px++){
-      color pixel = strip->pixels[px];
+      color pixel = strips[i].pixels[px];
       LPD8806_send_byte(pixel.g | 0x80);
       LPD8806_send_byte(pixel.b | 0x80);
       LPD8806_send_byte(pixel.r | 0x80);
