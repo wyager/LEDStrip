@@ -116,16 +116,24 @@ def multiply_colors(color_stream, magnitude_stream, scalar):
 # Max the colors out at the cap value and turn them to integers
 def cap_colors(color_stream, cap):
 	for colors in color_stream:
-		colors = [(min(r, cap), min(g, cap), min(b, cap)) for r,g,b in colors]
-		colors = [(int(r), int(g), int(b)) for r,g,b in colors]
+		for i in range(len(colors)):
+			r,g,b = colors[i]
+			if r+g+b > cap:
+				total = r+g+b
+				r = float(r) / total * cap
+				g = float(g) / total * cap
+				b = float(b) / total * cap
+			r,g,b = int(r),int(g),int(b)
+			colors[i] = r,g,b
+			assert(r+g+b < 127)
 		yield colors
 
 
 teensy_file = "/dev/tty.usbmodem12341"
-#teensy = serial.Serial(teensy_file, 115200)
+teensy = serial.Serial(teensy_file, 115200)
 def send_to_teensy(strip):
 	command = ''.join(chr(r)+chr(g)+chr(b) for r,g,b in strip)
-	#teensy.write(command)
+	teensy.write(command)
 
 if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
@@ -138,7 +146,7 @@ if __name__ == '__main__':
 	
 	fft_colors = multiply_colors(raw_colors, smooth_fft, scalar = 127*5.0)
 
-	led_colors = cap_colors(fft_colors, cap = 32)
+	led_colors = cap_colors(fft_colors, cap = 127.0)
 
 	for strip_rgb in led_colors:
 		for r,g,b in strip_rgb:

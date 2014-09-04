@@ -1,14 +1,14 @@
 #include "LPD8806.h"
 #include <avr/io.h>
 
-#define CLOCKPIN 4
-#define DATAPIN 5
-inline void set_clock_high(void){ PORTD |= 1 << CLOCKPIN; }
-inline void set_clock_low(void){ PORTD &= ~(1 << CLOCKPIN); }
-inline void set_data_high(void){ PORTD |= 1 << DATAPIN; }
-inline void set_data_low(void){ PORTD &= ~(1 << DATAPIN); }
-inline void set_data_out(void){ DDRD |= 1 << DATAPIN; }
-inline void set_clock_out(void){ DDRD |= 1 << CLOCKPIN; }
+#define CLOCKPIN 2
+#define DATAPIN 3
+inline void set_clock_high(void){ PORTB |= 1 << CLOCKPIN; }
+inline void set_clock_low(void){ PORTB &= ~(1 << CLOCKPIN); }
+inline void set_data_high(void){ PORTF |= 1 << DATAPIN; }
+inline void set_data_low(void){ PORTF &= ~(1 << DATAPIN); }
+inline void set_data_out(void){ DDRF |= 1 << DATAPIN; }
+inline void set_clock_out(void){ DDRB |= 1 << CLOCKPIN; }
 void clock_strobe(void)  {set_clock_high(); set_clock_low();}
 // Prepare teensy pins and then prepare the strip
 void LPD8806_IO_init(size_t num_strips){

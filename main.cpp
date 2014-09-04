@@ -39,11 +39,13 @@ int main(void)
 	usb_serial_flush_input();
 
 	while (1) {
-		
 
 		for(uint8_t pixel = 0; pixel < 32; pixel++){
+			while(!usb_serial_available()){};
 			uint8_t r = usb_serial_getchar();
+			while(!usb_serial_available()){};
 			uint8_t g = usb_serial_getchar();
+			while(!usb_serial_available()){};
 			uint8_t b = usb_serial_getchar();
 			strips[0].pixels[pixel] = {r, g, b};
 		}
