@@ -127,6 +127,15 @@ def send_to_teensy(strip):
 	command = ''.join(chr(r)+chr(g)+chr(b) for r,g,b in strip)
 	#teensy.write(command)
 
+def test_strips():
+	while True:
+		for i in range(32):
+			for color in [(127,0,0), (0, 127, 0), (0,0,127), (127, 127, 127)]:
+				colors = [(0,0,0)]*32
+				colors[i] = color
+				yield colors
+				time.sleep(1)
+
 if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
 	scaled_fft = scale_to_LEDs(fft_stream, num_leds = 32, decimation = 8)
@@ -139,7 +148,7 @@ if __name__ == '__main__':
 	fft_colors = multiply_colors(raw_colors, smooth_fft, scalar = 127*5.0)
 
 	led_colors = cap_colors(fft_colors, cap = 32)
-
+	led_colors = test_strips()
 	for strip_rgb in led_colors:
 		for r,g,b in strip_rgb:
 			sys.stdout.write("r"*r)

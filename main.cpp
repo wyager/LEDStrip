@@ -41,15 +41,61 @@ int main(void)
 	while (1) {
 		
 
-		for(uint8_t pixel = 0; pixel < 32; pixel++){
-			uint8_t r = usb_serial_getchar();
-			uint8_t g = usb_serial_getchar();
-			uint8_t b = usb_serial_getchar();
-			strips[0].pixels[pixel] = {r, g, b};
-		}
+		// for(uint8_t pixel = 0; pixel < 32; pixel++){
+		// 	uint8_t r = usb_serial_getchar();
+		// 	uint8_t g = usb_serial_getchar();
+		// 	uint8_t b = usb_serial_getchar();
+		// 	strips[0].pixels[pixel] = {r, g, b};
+		// }
+		// while(1){
+		// 	while(!usb_serial_available()){}
+		// 	uint8_t recvd = usb_serial_getchar();
+		// 	uint8_t bit;
+		// 	if(recvd == '1') bit = 1;
+		// 	else bit = 0;
+		// 	LPD8806_send_bit(bit);
+			
+			
+		// 	LED_TOGGLE;
+		// 	// LPD8806_send_byte(0x0);
+		// 	// LPD8806_send_byte(0x0);
+		// 	// for(int i=0; i<(32*3); i++){
+		// 	// 	LPD8806_send_byte(0x81);
+		// 	// }
+			
+		// }
+		// while(1){
+		// 	//LPD8806_send(strips, num_strips);
+		// 	LED_ON;
+		// 	for(int i=0; i<32; i++){
+		// 		strips[0].pixels[i] = {127, 127, 127};
+		// 	}
+		// 	LPD8806_send(strips, num_strips);
+		// 	_delay_ms(5);
+		// 	LED_OFF;
+		// 	for(int i=0; i<32; i++){
+		// 		strips[0].pixels[i] = {0, 0, 0};
+		// 	}
+		// 	LPD8806_send(strips, num_strips);
+		// 	_delay_ms(5);
+		// }
 
-		LPD8806_send(strips, num_strips);
-		LED_TOGGLE;
+		for(int i = 0; i<32; i++){
+			strips[0].pixels[i] = {0x7F, 0, 0};
+			LPD8806_send(strips, num_strips);
+			_delay_ms(1000);
+			strips[0].pixels[i] = {0, 0x7F, 0};
+			LPD8806_send(strips, num_strips);
+			_delay_ms(1000);
+			strips[0].pixels[i] = {0, 0, 0x7F};
+			LPD8806_send(strips, num_strips);
+			_delay_ms(1000);
+			strips[0].pixels[i] = {0x7F, 0x7F, 0x7F};
+			LPD8806_send(strips, num_strips);
+			_delay_ms(1000);
+			strips[0].pixels[i] = {0, 0, 0};
+			
+		}
 	}
 }
 
