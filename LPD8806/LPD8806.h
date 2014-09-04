@@ -7,7 +7,5 @@ typedef struct {
 } strip_data;
 // Prepare teensy pins and then prepare the strip
 void LPD8806_IO_init(size_t num_strips);
-// Send a single byte to the LED strip
-void LPD8806_send_byte(uint8_t the_byte);
 // Send the pixel data from <num_strips> strips, starting at <strips>
 void LPD8806_send(strip_data* strips, size_t num_strips);
