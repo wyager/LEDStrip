@@ -62,11 +62,12 @@ def inject_white_noise(fft_stream, baseline):
 def normalize_each(data_stream, falloff):
 	norm = None
 	for data in data_stream:
-		norm = data if norm == None else norm
-		norm *= falloff
-		norm += data*(1.0 - falloff)
-		data /= norm
-		yield data
+		norm = data.copy() if norm == None else norm
+		difference = data - norm
+		norm += np.sqrt(difference.clip(0))*falloff
+		norm += difference.clip(max=0)*falloff
+		print norm
+		yield data/norm
 
 # Normalize a data stream so the sum of each array in the stream approaches 1
 def normalize_all(data_stream, falloff):
@@ -82,7 +83,7 @@ def normalize_all(data_stream, falloff):
 def smooth(data_stream, falloff):
 	smoothed = None
 	for data in data_stream:
-		smoothed = data if smoothed == None else smoothed
+		smoothed = data.copy() if smoothed == None else smoothed
 		smoothed *= falloff
 		smoothed += data*(1.0 - falloff)
 		yield smoothed
@@ -151,7 +152,7 @@ if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
 	scaled_fft = scale_to_LEDs(fft_stream, num_leds = 32, decimation = 8)
 	noised_fft = inject_white_noise(scaled_fft, baseline = 5000)
-	evened_fft = normalize_each(noised_fft, falloff = .99)
+	evened_fft = normalize_each(noised_fft, falloff = .1)
 	normalized = normalize_all(evened_fft, falloff = .8)
 	smooth_fft = smooth(normalized, falloff = .8)
 
