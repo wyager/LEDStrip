@@ -57,6 +57,17 @@ def inject_white_noise(fft_stream, baseline):
 	for sample in fft_stream:
 		yield sample + baseline
 
+# Normalize each element in a data stream so its value approaches 1
+# Good for working with mics with uneven frequency distributions
+def normalize_each(data_stream, falloff):
+	norm = None
+	for data in data_stream:
+		norm = data if norm == None else norm
+		norm *= falloff
+		norm += data*(1.0 - falloff)
+		data /= norm
+		yield data
+
 # Normalize a data stream so the sum of each array in the stream approaches 1
 def normalize_all(data_stream, falloff):
 	norm = None
@@ -140,7 +151,8 @@ if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
 	scaled_fft = scale_to_LEDs(fft_stream, num_leds = 32, decimation = 8)
 	noised_fft = inject_white_noise(scaled_fft, baseline = 5000)
-	normalized = normalize_all(noised_fft, falloff = .8)
+	evened_fft = normalize_each(noised_fft, falloff = .99)
+	normalized = normalize_all(evened_fft, falloff = .8)
 	smooth_fft = smooth(normalized, falloff = .8)
 
 	raw_colors = normalize_colors(generate_colors(32))
