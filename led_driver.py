@@ -66,7 +66,6 @@ def normalize_each(data_stream, falloff):
 		difference = data - norm
 		norm += np.sqrt(difference.clip(0))*falloff
 		norm += difference.clip(max=0)*falloff
-		print norm
 		yield data/norm
 
 # Normalize a data stream so the sum of each array in the stream approaches 1
@@ -150,10 +149,10 @@ def send_to_teensy(strip):
 
 if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
-	scaled_fft = scale_to_LEDs(fft_stream, num_leds = 32, decimation = 8)
+	evened_fft = normalize_each(fft_stream, falloff = .1)
+	scaled_fft = scale_to_LEDs(evened_fft, num_leds = 32, decimation = 8)
 	noised_fft = inject_white_noise(scaled_fft, baseline = 5000)
-	evened_fft = normalize_each(noised_fft, falloff = .1)
-	normalized = normalize_all(evened_fft, falloff = .8)
+	normalized = normalize_all(noised_fft, falloff = .8)
 	smooth_fft = smooth(normalized, falloff = .8)
 
 	raw_colors = normalize_colors(generate_colors(32))
