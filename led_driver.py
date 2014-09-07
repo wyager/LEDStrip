@@ -151,7 +151,7 @@ if __name__ == '__main__':
 	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
 	evened_fft = normalize_each(fft_stream, falloff = .1)
 	scaled_fft = scale_to_LEDs(evened_fft, num_leds = 32, decimation = 8)
-	noised_fft = inject_white_noise(scaled_fft, baseline = 5000)
+	noised_fft = inject_white_noise(scaled_fft, baseline = 5.0)
 	normalized = normalize_all(noised_fft, falloff = .8)
 	smooth_fft = smooth(normalized, falloff = .8)
 
