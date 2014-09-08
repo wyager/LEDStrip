@@ -87,9 +87,10 @@ def smooth(data_stream, falloff):
 		smoothed += data*(1.0 - falloff)
 		yield smoothed
 
-def exaggerate_brightnesses(color_stream, expected_max):
+def exaggerate(color_stream, num_leds, boldness):
+	expected_brightness = (1.0 / num_leds) * boldness
 	for brightnesses in color_stream:
-		yield (brightnesses**2) / expected_max
+		yield (brightnesses**2) / expected_brightness
 
 def g_0(t, n):
 	nf = 0.1
@@ -158,7 +159,7 @@ if __name__ == '__main__':
 	brightnesses = inject_white_noise(brightnesses, baseline = 5.0)
 	brightnesses = normalize_all(brightnesses, falloff = .8)
 	brightnesses = smooth(brightnesses, falloff = .8)
-	brightnesses = exaggerate_brightnesses(brightnesses, expected_max = (1.0/32))
+	brightnesses = exaggerate(brightnesses, num_leds = 32, boldness = 1.7)
 
 	colors = normalize_colors(generate_colors(32))
 	
