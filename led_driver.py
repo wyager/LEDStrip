@@ -87,6 +87,10 @@ def smooth(data_stream, falloff):
 		smoothed += data*(1.0 - falloff)
 		yield smoothed
 
+def exaggerate_brightnesses(color_stream, expected_max):
+	for brightnesses in color_stream:
+		yield (brightnesses**2) / expected_max
+
 def g_0(t, n):
 	nf = 0.1
 	delta = lambda t : sin(t*.03)*4
@@ -148,18 +152,22 @@ def send_to_teensy(strip):
 	teensy.write(command)
 
 if __name__ == '__main__':
-	fft_stream = to_fft(read_audio(audio_stream, num_samples = 512))
-	evened_fft = normalize_each(fft_stream, falloff = .1)
-	scaled_fft = scale_to_LEDs(evened_fft, num_leds = 32, decimation = 8)
-	noised_fft = inject_white_noise(scaled_fft, baseline = 5.0)
-	normalized = normalize_all(noised_fft, falloff = .8)
-	smooth_fft = smooth(normalized, falloff = .8)
+	brightnesses = to_fft(read_audio(audio_stream, num_samples = 512))
+	brightnesses = normalize_each(brightnesses, falloff = .1)
+	brightnesses = scale_to_LEDs(brightnesses, num_leds = 32, decimation = 8)
+	brightnesses = inject_white_noise(brightnesses, baseline = 5.0)
+	brightnesses = normalize_all(brightnesses, falloff = .8)
+	brightnesses = smooth(brightnesses, falloff = .8)
+	brightnesses = exaggerate_brightnesses(brightnesses, expected_max = (1.0/32))
 
-	raw_colors = normalize_colors(generate_colors(32))
+	colors = normalize_colors(generate_colors(32))
 	
-	fft_colors = multiply_colors(raw_colors, smooth_fft, scalar = 127*5.0)
+	colors = multiply_colors(colors, brightnesses, scalar = 127*5.0)
 
-	led_colors = cap_colors(fft_colors, cap = 127.0)
+	colors = cap_colors(colors, cap = 127.0)
 
-	for strip_rgb in led_colors:
-		send_to_teensy(strip_rgb)
+	for strip in colors:
+		for r,g,b in strip:
+			sys.stdout.write("r"*r + "g"*g + "b"*b + "\n")
+		print
+		send_to_teensy(strip)
