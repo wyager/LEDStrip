@@ -93,25 +93,24 @@ def exaggerate(color_stream, num_leds, boldness):
 		yield (brightnesses**2) / expected_brightness
 
 def g_0(t, n):
-	nf = 0.1
-	delta = lambda t : sin(t*.03)*4
-	return sin(nf*n + delta(t))
+	return sin(.1*n + sin(t*.27)*4)
 def g_1(t, n):
-	nf = 0.06
-	delta = lambda t : sin(t*.1)
-	return sin(nf*n + delta(t))
+	return sin(.3*n + sin(t*.17)*3)
 
 waveforms = [g_0, g_1]
 
 def waveform(t, n):
-	return sum([g(t,n) for g in waveforms])
+	total = sum([g(t,n) for g in waveforms]) / len(waveforms) # -1 to 1
+	total += 1.0 # 0 to 2
+	total /= 2.0 # 0 to 1
+	return total
 
 
 # Makes a list of colors. Each LED's color function is offset by 1 second 
 def generate_colors(num_leds):
 	while True:
 		t = time.time()
-		values = [waveform(t, n) % 1.0 for n in range(num_leds)]
+		values = [waveform(t, n) for n in range(num_leds)]
 		colors = [hsv_to_rgb(y, 1, 1) for y in values]
 		yield colors
 
@@ -142,7 +141,7 @@ def cap_colors(color_stream, cap):
 				b = float(b) / total * cap
 			r,g,b = int(r),int(g),int(b)
 			colors[i] = r,g,b
-			assert(r+g+b < 127)
+			assert(r+g+b <= 127)
 		yield colors
 
 
