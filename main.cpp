@@ -15,8 +15,13 @@ extern "C"{
 
 #define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
 
-void wait_for_byte(){
-	while(!usb_serial_available()){/* wait */};
+uint8_t usb_is_connected(void){
+	return (usb_serial_get_control() & USB_SERIAL_DTR);
+}
+
+uint8_t usb_serial_blocking_read(void){
+	while(!usb_serial_available()){}
+	return usb_serial_getchar();
 }
 
 int main(void)
@@ -29,22 +34,23 @@ int main(void)
 
 	usb_init();
 	while (!usb_configured()) /* wait */ ;
-	while (!(usb_serial_get_control() & USB_SERIAL_DTR)) /* wait */ ;
+	while (!usb_is_connected()) /* wait */ ;
 	usb_serial_flush_input();
 
 	while (1) {
-		// Repeatedly read RGB data over USB serial and then
-		// forward it to the LED strip
-		for(uint8_t pixel = 0; pixel < 32; pixel++){
-			wait_for_byte();
-			uint8_t r = usb_serial_getchar();
-			wait_for_byte();
-			uint8_t g = usb_serial_getchar();
-			wait_for_byte();
-			uint8_t b = usb_serial_getchar();
-			strips[0].pixels[pixel] = {r, g, b};
-		}
+		uint8_t index = usb_serial_blocking_read();
+		if(!(index & 0x80)) index = usb_serial_blocking_read(); // dropped byte
+		uint8_t color_byte = usb_serial_blocking_read();
 
-		LPD8806_send(strips, num_strips);
+		uint8_t pixel_index = (index >> 2) & 0x1F; // 5 pixel index bits
+		uint8_t color_index = index & 0x03; // 2 color bits
+
+		if(color_index == 0) strips[0].pixels[pixel_index].r = color_byte;
+		if(color_index == 1) strips[0].pixels[pixel_index].g = color_byte;
+		if(color_index == 2) strips[0].pixels[pixel_index].b = color_byte;
+
+		if(pixel_index == 31 && color_index == 2){
+			LPD8806_send(strips, num_strips);
+		}
 	}
 }

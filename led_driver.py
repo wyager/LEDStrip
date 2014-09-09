@@ -149,7 +149,10 @@ def cap_colors(color_stream, cap):
 teensy_file = "/dev/tty.usbmodem12341"
 teensy = serial.Serial(teensy_file, 115200)
 def send_to_teensy(strip):
-	command = ''.join(chr(r)+chr(g)+chr(b) for r,g,b in strip)
+	command = [(((i<<2)+0x80,r),((i<<2)+0x81,g),((i<<2)+0x82,b)) 
+		for (i,(r,g,b)) in enumerate(strip)]
+	command = ''.join(chr(ri)+chr(r)+chr(gi)+chr(g)+chr(bi)+chr(b) 
+		for (ri,r),(gi,g),(bi,b) in command)
 	teensy.write(command)
 
 if __name__ == '__main__':
