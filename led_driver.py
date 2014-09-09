@@ -170,7 +170,7 @@ if __name__ == '__main__':
 	colors = cap_colors(colors, cap = 127.0)
 
 	for strip in colors:
-		for r,g,b in strip:
-			sys.stdout.write("r"*r + "g"*g + "b"*b + "\n")
-		print
+		# for r,g,b in strip:
+		# 	sys.stdout.write("r"*r + "g"*g + "b"*b + "\n")
+		# print
 		send_to_teensy(strip)
