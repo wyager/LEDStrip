@@ -24,8 +24,8 @@ def read_audio(audio_stream, num_samples):
 		# Read all the input data. 
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
-		samples = np.fromstring(samples, dtype=np.uint16).astype(np.uint32)
-		samples = samples[::1] + samples[1::2]
+		samples = np.fromstring(samples, dtype=np.int16).astype(np.int32)
+		samples = samples[::2] + samples[1::2]
 		assert(len(samples) == num_samples)
 		yield samples
 
