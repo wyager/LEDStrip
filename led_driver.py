@@ -25,7 +25,8 @@ def read_audio(audio_stream, num_samples):
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
 		samples = np.fromstring(samples, dtype=np.uint16)
-		samples = samples[::2] + samples[1::2]
+		samples = samples[::2] #+ samples[1::2]
+		assert(len(samples) == num_samples)
 		yield samples
 
 # Convert the audio stream into a stream of FFTs
@@ -148,7 +149,7 @@ def cap_colors(color_stream, cap):
 		yield colors
 
 
-teensy_file = "/dev/tty.usbmodem12341"
+teensy_file = "/dev/ttyACM0"
 teensy = serial.Serial(teensy_file, 115200)
 def send_to_teensy(strip):
 	command = [(((i<<2)+0x80,r),((i<<2)+0x81,g),((i<<2)+0x82,b)) 
