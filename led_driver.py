@@ -162,7 +162,7 @@ if __name__ == '__main__':
 	brightnesses = to_fft(read_audio(audio_stream, num_samples = 512))
 	brightnesses = normalize_each(brightnesses, falloff = .1)
 	brightnesses = scale_to_LEDs(brightnesses, num_leds = 32, decimation = 8)
-	brightnesses = inject_white_noise(brightnesses, baseline = 5.0)
+	#brightnesses = inject_white_noise(brightnesses, baseline = 5.0)
 	brightnesses = normalize_all(brightnesses, falloff = .8)
 	brightnesses = smooth(brightnesses, falloff = .8)
 	brightnesses = exaggerate(brightnesses, num_leds = 32, boldness = 1.7)
