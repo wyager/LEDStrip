@@ -13,7 +13,7 @@ import serial
 from colorsys import hsv_to_rgb
 
 audio_stream = pa.PyAudio().open(format=pa.paInt16, \
-								channels=1, \
+								channels=2, \
 								rate=44100, \
 								input=True, \
 								frames_per_buffer=512)
@@ -24,8 +24,8 @@ def read_audio(audio_stream, num_samples):
 		# Read all the input data. 
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
-		samples = [struct.unpack('<h',samples[2*i:2*i+2])[0] \
-									for i in range(num_samples)]
+		samples = np.fromstring(samples, dtype=np.uint16)
+		samples = samples[::2] + samples[1::2]
 		yield samples
 
 # Convert the audio stream into a stream of FFTs
@@ -66,6 +66,7 @@ def normalize_each(data_stream, falloff):
 		difference = data - norm
 		norm += np.sqrt(difference.clip(0))*falloff
 		norm += difference.clip(max=0)*falloff
+		norm += norm == 0 # No dividion by 0
 		yield data/norm
 
 # Normalize a data stream so the sum of each array in the stream approaches 1
@@ -75,6 +76,8 @@ def normalize_all(data_stream, falloff):
 		norm = sum(data) if norm == None else norm
 		norm *= falloff
 		norm += sum(data)*(1.0 - falloff)
+		if norm == 0:
+			norm = 1 # No dividion by 0
 		data /= norm
 		yield data
 
