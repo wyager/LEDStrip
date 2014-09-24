@@ -12,7 +12,11 @@ import sys
 import serial
 from colorsys import hsv_to_rgb
 
-audio_stream = sys.stdin
+audio_stream = pa.PyAudio().open(format=pa.paInt16, \
+								channels=1, \
+								rate=44100, \
+								input=True, \
+								frames_per_buffer=512)
 
 # Convert the audio data to numbers, num_samples at a time.
 def read_audio(audio_stream, num_samples):
@@ -21,8 +25,7 @@ def read_audio(audio_stream, num_samples):
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
 		samples = [struct.unpack('<h',samples[2*i:2*i+2])[0] \
-									for i in range(num_samples*2)]
-		samples = samples[::2]
+									for i in range(num_samples)]
 		yield samples
 
 # Convert the audio stream into a stream of FFTs
