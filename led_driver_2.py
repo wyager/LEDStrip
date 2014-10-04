@@ -43,7 +43,7 @@ def compute_convolution_matrices(frequencies, num_samples, sample_rate):
 def convolve(audio_stream, convolution_matrices):
 	sin_phase, cos_phase = convolution_matrices
 	for samples in audio_stream:
-		yield sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2
+		yield np.sqrt(sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2)
 
 def rolling_average(array_stream, falloff):
 	average = np.average(array_stream.next())
@@ -53,7 +53,7 @@ def rolling_average(array_stream, falloff):
 		average += np.average(array) * (1 - falloff)
 		yield average
 
-def ratio(constant_stream, array_stream, falloff):
+def ratio(constant_stream, array_stream):
 	while True:
 		constant = constant_stream.next()
 		array = array_stream.next()
@@ -103,6 +103,18 @@ def add_white_noise(array_stream, amount):
 			yield array + amount
 		else:
 			yield array
+
+def exaggerate(array_stream, exponent):
+	for array in array_stream:
+		yield array**exponent
+
+def generate_compensation_factors_for_imbalanced_mic(note_stream):
+	notes, notes2 = tee(note_stream)
+	averages = rolling_average(notes, falloff=.9)
+	relative_brightnesses = rolling_smooth(ratio(averages, notes2), falloff=.9)
+	scale_factors = calculate_scale_factors(relative_brightnesses)
+	return scale_factors
+
 
 def g_0(t, n):
 	return sin(.1*n + sin(t*.27)*4)
@@ -172,22 +184,21 @@ if __name__ == '__main__':
 		return (2.0**(1.0/12))**(n-49) * 440.0
 	#A1 to B6, by whole step. One for each LED.
 	frequencies = [f(i) for i in range(13, 13+64)[::2]]
-	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=512, sample_rate=44100)
-	audio = read_audio(audio_stream, num_samples=512)
+	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
+	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
-	notes = add_white_noise(notes, amount=50000000)
+	notes = add_white_noise(notes, amount=2000)
 	notes, notes2 = tee(notes)
-	notes, notes3 = tee(notes)
-	averages = rolling_average(notes, falloff=.99)
-	relative_brightnesses = ratio(averages, notes2, falloff=.99)
-	scale_factors = calculate_scale_factors(relative_brightnesses)
-	notes = schur(notes3, scale_factors)
+	scale_factors = generate_compensation_factors_for_imbalanced_mic(notes2)
+	notes = schur(notes, scale_factors)
 	notes = normalize(notes)
+	notes = exaggerate(notes, exponent=1.6)
+	notes = rolling_smooth(notes, falloff=.7)
 
 
 	colors = normalize_colors(generate_colors(32))
 	
-	colors = multiply_colors(colors, notes, scalar = 127*.2)
+	colors = multiply_colors(colors, notes, scalar = 127*.05)
 
 	colors = cap_colors(colors, cap = 127.0)
 
