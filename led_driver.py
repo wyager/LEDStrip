@@ -76,11 +76,11 @@ def calculate_scale_factors(array_stream):
 	# Depending on the ratio of each frequency to average, scale it.
 	# Graph this function to see what it's doing.
 	# It's completely arbitrary; I just like it.
-	# sqrt(2 / (1 + e^(5*(atan(1.55x)-1))))
+	# sqrt(100 / (1 + e^(20*(atan(2x+1)-1))))+.4
 	for array in array_stream:
-		exponent = (np.arctan(array*1.55)-1)*5
+		exponent = (np.arctan(array*2+1)-1)*20
 		bottom = np.exp(exponent) + 1
-		factors = np.sqrt(bottom*2)
+		factors = np.sqrt(bottom*100)+.4
 		yield factors
 
 def schur(array_stream1, array_stream2):
