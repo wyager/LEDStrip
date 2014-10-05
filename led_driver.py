@@ -73,15 +73,22 @@ def exaggerate(array_stream, exponent):
 	for array in array_stream:
 		yield array**exponent
 
-def smash_persistent_sounds(sound_stream, falloff):
-	norm = sound_stream.next()
-	yield norm
-	for sounds in sound_stream:
-		difference = sounds - norm
-		norm += difference.clip(0)**(.1)*(1-falloff)
-		norm -= np.abs(difference.clip(max=0))**(.75)*(1-falloff)
-		norm += norm == 0 # No division by zero
-		yield sounds/norm
+def human_hearing_multiplier(freq):
+	points = {0:-30, 50:-20, 100:-10, 200:0, 500:3, 1000:0, \
+				2000:3, 5000:8, 10000:-8, 15000:0, 20000:-8}
+	freqs = sorted(points.keys())
+	for i in range(len(freqs)-1):
+		if freq >= freqs[i] and freq < freqs[i+1]:
+			x1 = float(freqs[i])
+			x2 = float(freqs[i+1])
+			break
+	y1, y2 = points[x1], points[x2]
+	decibels = ((x2-freq)*y1 + (freq-x1)*y2)/(x2-x1)
+	return 10.0**(decibels/10.0)
+
+def schur(array_stream, multipliers):
+	for array in array_stream:
+		yield array*multipliers
 
 
 def g_0(t, n):
@@ -152,11 +159,12 @@ if __name__ == '__main__':
 		return (2.0**(1.0/12))**(n-49) * 440.0
 	#A1 to B6, by whole step. One for each LED.
 	frequencies = [f(i) for i in range(13, 13+64)[::2]]
+	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
 	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
 	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
 	notes = add_white_noise(notes, amount=2000)
-	notes = smash_persistent_sounds(notes, falloff=.9)
+	notes = schur(notes, human_ear_multipliers)
 	notes = normalize(notes)
 	notes = exaggerate(notes, exponent=1.6)
 	notes = rolling_smooth(notes, falloff=.7)
