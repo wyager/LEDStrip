@@ -77,7 +77,7 @@ def smash_persistent_sounds(sound_stream, falloff):
 	norm = sound_stream.next()
 	yield norm
 	for sounds in sound_stream:
-		difference = data - norm
+		difference = sounds - norm
 		norm += difference.clip(0)**(.5)*(1-falloff)
 		norm += difference.clip(max=0)**(.75)*(1-falloff)
 		norm += norm == 0 # No division by zero
