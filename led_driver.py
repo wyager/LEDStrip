@@ -45,22 +45,6 @@ def convolve(audio_stream, convolution_matrices):
 	for samples in audio_stream:
 		yield np.sqrt(sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2)
 
-def rolling_average(array_stream, falloff):
-	average = np.average(array_stream.next())
-	yield average
-	for array in array_stream:
-		average *= falloff
-		average += np.average(array) * (1 - falloff)
-		yield average
-
-def ratio(constant_stream, array_stream):
-	while True:
-		constant = constant_stream.next()
-		array = array_stream.next()
-		if constant == 0:
-			yield np.zeros(len(array))
-		else:
-			yield array/constant
 
 def rolling_smooth(array_stream, falloff):
 	smooth = array_stream.next()
@@ -69,25 +53,6 @@ def rolling_smooth(array_stream, falloff):
 		smooth *= falloff
 		smooth += array * (1 - falloff)
 		yield smooth
-
-# Intended to accept the output of
-# ratio() or rolling_smooth(ratio()).
-def calculate_scale_factors(array_stream):
-	# Depending on the ratio of each frequency to average, scale it.
-	# Graph this function to see what it's doing.
-	# It's completely arbitrary; I just like it.
-	# sqrt(100 / (1 + e^(20*(atan(2x+1)-1))))+.4
-	for array in array_stream:
-		exponent = (np.arctan(array*2+1)-1)*20
-		bottom = np.exp(exponent) + 1
-		factors = np.sqrt(bottom*100)+.4
-		yield factors
-
-def schur(array_stream1, array_stream2):
-	while True:
-		array1 = array_stream1.next()
-		array2 = array_stream2.next()
-		yield array1 * array2
 
 def normalize(array_stream):
 	for array in array_stream:
@@ -108,12 +73,15 @@ def exaggerate(array_stream, exponent):
 	for array in array_stream:
 		yield array**exponent
 
-def generate_compensation_factors_for_imbalanced_mic(note_stream):
-	notes, notes2 = tee(note_stream)
-	averages = rolling_average(notes, falloff=.9)
-	relative_brightnesses = rolling_smooth(ratio(averages, notes2), falloff=.9)
-	scale_factors = calculate_scale_factors(relative_brightnesses)
-	return scale_factors
+def smash_persistent_sounds(sound_stream, falloff):
+	norm = sound_stream.next()
+	yield norm
+	for sounds in sound_stream:
+		difference = data - norm
+		norm += difference.clip(0)**(.5)*(1-falloff)
+		norm += difference.clip(max=0)**(.75)*(1-falloff)
+		norm += norm == 0 # No division by zero
+		yield data/norm
 
 
 def g_0(t, n):
@@ -188,9 +156,7 @@ if __name__ == '__main__':
 	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
 	notes = add_white_noise(notes, amount=2000)
-	notes, notes2 = tee(notes)
-	scale_factors = generate_compensation_factors_for_imbalanced_mic(notes2)
-	notes = schur(notes, scale_factors)
+	notes = smash_persistent_sounds(notes, falloff=.9)
 	notes = normalize(notes)
 	notes = exaggerate(notes, exponent=1.6)
 	notes = rolling_smooth(notes, falloff=.7)
