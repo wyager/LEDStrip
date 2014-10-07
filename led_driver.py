@@ -109,10 +109,10 @@ def rolling_scale_to_max(stream, falloff):
 		else:
 			avg_peak *= falloff
 			avg_peak += peak * (1-falloff)
-		if peak == 0:
+		if avg_peak == 0:
 			yield array
 		else:
-			yield array / peak
+			yield array / avg_peak
 
 
 def g_0(t, n):
