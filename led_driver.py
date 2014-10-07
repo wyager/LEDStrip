@@ -102,7 +102,7 @@ def schur(array_stream, multipliers):
 
 def scale_to_max(stream):
 	for array in stream:
-		peak = numpy.max(array)
+		peak = np.max(array)
 		if peak == 0:
 			yield array
 		else:
