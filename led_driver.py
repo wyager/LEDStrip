@@ -72,14 +72,9 @@ def add_white_noise(array_stream, amount):
 		else:
 			yield array
 
-def exaggerate(array_stream, exponent, bias):
+def exaggerate(array_stream, bias):
 	for array in array_stream:
-		average = np.average(array)
-		if average == 0:
-			average = 1 # No division by zero
-		scale = (array - bias) / average
-		scale *= scale > 0
-		yield array * (scale ** exponent)
+		yield np.exp(array - (bias + 1))
 
 def human_hearing_multiplier(freq):
 	points = {0:-10, 50:-8, 100:-4, 200:0, 500:2, 1000:0, \
@@ -173,7 +168,7 @@ if __name__ == '__main__':
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	notes = normalize(notes)
-	notes = exaggerate(notes, exponent=1.6, bias=.2)
+	notes = exaggerate(notes, bias=.2)
 	notes = rolling_smooth(notes, falloff=.7)
 
 
