@@ -77,7 +77,7 @@ def exaggerate(array_stream, exponent):
 		yield array**exponent
 
 def human_hearing_multiplier(freq):
-	points = {0:-15, 50:-8, 100:-4, 200:0, 500:2, 1000:0, \
+	points = {0:-10, 50:-8, 100:-4, 200:0, 500:2, 1000:0, \
 				2000:2, 5000:4, 10000:-4, 15000:0, 20000:-4}
 	freqs = sorted(points.keys())
 	for i in range(len(freqs)-1):
