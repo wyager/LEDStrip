@@ -100,6 +100,14 @@ def schur(array_stream, multipliers):
 	for array in array_stream:
 		yield array*multipliers
 
+def scale_to_max(stream):
+	for array in stream:
+		peak = numpy.max(array)
+		if peak == 0:
+			yield array
+		else:
+			yield array / peak
+
 
 def g_0(t, n):
 	return sin(.1*n + sin(t*.27)*4)
@@ -175,7 +183,8 @@ if __name__ == '__main__':
 	#notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	#notes = rolling_scale(notes, falloff = .99)
-	notes = normalize(notes)
+	#notes = normalize(notes)
+	notes = scale_to_max(notes)
 	#notes = exaggerate(notes, bias=.2)
 	notes = rolling_smooth(notes, falloff=.7)
 
