@@ -172,10 +172,10 @@ if __name__ == '__main__':
 	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
 	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
-	notes = rolling_scale(notes, falloff = .99)
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
-	notes = normalize(notes)
+	notes = rolling_scale(notes, falloff = .99)
+	#notes = normalize(notes)
 	notes = exaggerate(notes, bias=.2)
 	notes = rolling_smooth(notes, falloff=.7)
 
