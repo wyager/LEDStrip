@@ -74,7 +74,7 @@ def add_white_noise(array_stream, amount):
 
 def exaggerate(array_stream, bias):
 	for array in array_stream:
-		yield np.exp(array - (bias + 1))
+		yield array * np.exp(array - (bias + 1))
 
 def human_hearing_multiplier(freq):
 	points = {0:-10, 50:-8, 100:-4, 200:0, 500:2, 1000:0, \
