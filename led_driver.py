@@ -79,7 +79,7 @@ def exaggerate(array_stream, exponent, bias):
 			average = 1 # No division by zero
 		scale = (array - bias) / average
 		scale *= scale > 0
-		return array * (scale ** exponent)
+		yield array * (scale ** exponent)
 
 def human_hearing_multiplier(freq):
 	points = {0:-10, 50:-8, 100:-4, 200:0, 500:2, 1000:0, \
