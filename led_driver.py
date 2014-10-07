@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
 	colors = normalize_colors(generate_colors(32))
 	
-	colors = multiply_colors(colors, notes, scalar = 127*.03)
+	colors = multiply_colors(colors, notes, scalar = 127*.01)
 
 	colors = cap_colors(colors, cap = 127.0)
 
