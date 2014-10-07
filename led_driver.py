@@ -100,9 +100,15 @@ def schur(array_stream, multipliers):
 	for array in array_stream:
 		yield array*multipliers
 
-def scale_to_max(stream):
+def rolling_scale_to_max(stream, falloff):
+	avg_peak = 0.0
 	for array in stream:
 		peak = np.max(array)
+		if peak > avg_peak:
+			avg_peak = peak # Output never exceeds 1
+		else:
+			avg_peak *= falloff
+			avg_peak += peak * (1-falloff)
 		if peak == 0:
 			yield array
 		else:
@@ -180,11 +186,11 @@ if __name__ == '__main__':
 	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
 	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
-	#notes = add_white_noise(notes, amount=2000)
+	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	#notes = rolling_scale(notes, falloff = .99)
 	#notes = normalize(notes)
-	notes = scale_to_max(notes)
+	notes = rolling_scale_to_max(notes, falloff=.98) # Range: 0-1
 	notes = exaggerate(notes, exponent=2)
 	notes = rolling_smooth(notes, falloff=.7)
 
