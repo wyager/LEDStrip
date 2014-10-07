@@ -162,8 +162,8 @@ if __name__ == '__main__':
 		return (2.0**(1.0/12))**(n-49) * 440.0
 	frequencies = [f(i*3) for i in range(32)]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
-	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=512, sample_rate=44100)
-	audio = read_audio(audio_stream, num_samples=512)
+	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
+	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
