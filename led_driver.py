@@ -47,7 +47,14 @@ def convolve(audio_stream, convolution_matrices):
 	for l, r in audio_stream:
 		yield convolve(l) + convolve(r) # Do them separately to avoid interference
 
-
+def rolling_scale(stream, falloff):
+	average = 1.0
+	for array in stream:
+		average *= falloff
+		average += np.average(array)*(1-falloff)
+		if average == 0:
+			average = 1
+		yield array / average
 
 def rolling_smooth(array_stream, falloff):
 	smooth = array_stream.next()
@@ -165,6 +172,7 @@ if __name__ == '__main__':
 	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
 	audio = read_audio(audio_stream, num_samples=256)
 	notes = convolve(audio, convolution_matrices)
+	notes = rolling_scale(notes, falloff = .99)
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	notes = normalize(notes)
@@ -174,7 +182,7 @@ if __name__ == '__main__':
 
 	colors = normalize_colors(generate_colors(32))
 	
-	colors = multiply_colors(colors, notes, scalar = 127*.05)
+	colors = multiply_colors(colors, notes, scalar = 127*.03)
 
 	colors = cap_colors(colors, cap = 127.0)
 
