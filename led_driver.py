@@ -26,9 +26,9 @@ def read_audio(audio_stream, num_samples):
 		samples = audio_stream.read(num_samples) 
 		# Convert input data to numbers
 		samples = np.fromstring(samples, dtype=np.int16).astype(np.float)
-		samples = samples[::2] #+ samples[1::2]
-		assert(len(samples) == num_samples)
-		yield samples
+		samples_l = samples[::2]  
+		samples_r = samples[1::2]
+		yield (samples_l, samples_r)
 
 # [[float x num_samples] x num frequencies] x 2
 # Used to compute presence of frequencies in signal
@@ -42,8 +42,11 @@ def compute_convolution_matrices(frequencies, num_samples, sample_rate):
 # the presence of the frequencies from the generated conv. matrix
 def convolve(audio_stream, convolution_matrices):
 	sin_phase, cos_phase = convolution_matrices
-	for samples in audio_stream:
-		yield np.sqrt(sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2)
+	def convolve(samples):
+		return np.sqrt(sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2)
+	for l, r in audio_stream:
+		yield convolve(l) + convolve(r) # Do them separately to avoid interference
+
 
 
 def rolling_smooth(array_stream, falloff):
