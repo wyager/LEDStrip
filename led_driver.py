@@ -160,8 +160,7 @@ if __name__ == '__main__':
 	# Frequency for a given note number.
 	def f(n):
 		return (2.0**(1.0/12))**(n-49) * 440.0
-	#A1 to B6, by whole step. One for each LED.
-	frequencies = [f(i) for i in range(13, 13+64)[::2]]
+	frequencies = [f(i*3) for i in range(32)]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
 	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=512, sample_rate=44100)
 	audio = read_audio(audio_stream, num_samples=512)
