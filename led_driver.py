@@ -163,12 +163,13 @@ if __name__ == '__main__':
 	#A1 to B6, by whole step. One for each LED.
 	frequencies = [f(i) for i in range(13, 13+64)[::2]]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
-	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=256, sample_rate=44100)
-	audio = read_audio(audio_stream, num_samples=256)
+	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=512, sample_rate=44100)
+	audio = read_audio(audio_stream, num_samples=512)
 	notes = convolve(audio, convolution_matrices)
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	notes = normalize(notes)
+	# Should I subtract a bit right here, so that exaggerate punishes white noise?
 	notes = exaggerate(notes, exponent=1.6)
 	notes = rolling_smooth(notes, falloff=.7)
 
