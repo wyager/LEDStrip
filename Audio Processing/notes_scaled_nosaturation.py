@@ -22,6 +22,20 @@ def convolve(audio_stream, convolution_matrices):
 	for l, r in audio_stream:
 		yield convolve(l) + convolve(r) # Do them separately to avoid interference
 
+def fft(audio_stream):
+	def real_fft(im):
+		im = np.abs(np.fft(im))
+		re = im[0:len(im)/2]
+		re[1:] += im[len(im)/2 + 1:][::-1]
+		return re
+	for l, r in audio_stream:
+		yield real_fft(l) + real_fft(r)
+
+def scale_samples(fft_stream):
+	for notes in fft_stream:
+		yield notes[::4] + notes[1::4] + notes[2::4] + notes[3::4]
+
+
 def rolling_scale(stream, falloff):
 	average = 1.0
 	for array in stream:
@@ -92,12 +106,14 @@ def rolling_scale_to_max(stream, falloff):
 # [[Float 0.0-1.0 x 32]]
 def process(audio_stream, num_leds, num_samples, sample_rate):
 	# Frequency for a given note number.
-	def f(n):
-		return (2.0**(1.0/12))**(n-49) * 440.0
-	frequencies = [(atan(.25*x)*500 + x*100) for x in range(num_leds)]
+	# def f(n):
+	# 	return (2.0**(1.0/12))**(n-49) * 440.0
+	# frequencies = [(atan(.25*x)*500 + x*100) for x in range(num_leds)]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
-	convolution_matrices = compute_convolution_matrices(frequencies, num_samples=num_samples, sample_rate=sample_rate)
-	notes = convolve(audio_stream, convolution_matrices)
+	# convolution_matrices = compute_convolution_matrices(frequencies, num_samples=num_samples, sample_rate=sample_rate)
+	# notes = convolve(audio_stream, convolution_matrices)
+	notes = fft(audio_stream)
+	notes = scale_samples(notes)
 	notes = add_white_noise(notes, amount=2000)
 	notes = schur(notes, human_ear_multipliers)
 	#notes = rolling_scale(notes, falloff = .99)
