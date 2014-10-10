@@ -33,7 +33,7 @@ def fft(audio_stream):
 
 def scale_samples(fft_stream):
 	for notes in fft_stream:
-		yield notes[::4] + notes[1::4] + notes[2::4] + notes[3::4]
+		yield (notes[::2] + notes[1::2])[0:32]
 
 
 def rolling_scale(stream, falloff):
