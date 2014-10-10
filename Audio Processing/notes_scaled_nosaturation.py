@@ -24,7 +24,7 @@ def convolve(audio_stream, convolution_matrices):
 
 def fft(audio_stream):
 	def real_fft(im):
-		im = np.abs(np.fft(im))
+		im = np.abs(np.fft.fft(im))
 		re = im[0:len(im)/2]
 		re[1:] += im[len(im)/2 + 1:][::-1]
 		return re
