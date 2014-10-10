@@ -39,8 +39,8 @@ def send_to_teensy(strip):
 
 if __name__ == '__main__':
 
-	audio = read_audio(audio_stream, num_samples=256)
-	leds = notes_scaled_nosaturation.process(audio, num_leds=32, num_samples=256, sample_rate=44100)
+	audio = read_audio(audio_stream, num_samples=512)
+	leds = notes_scaled_nosaturation.process(audio, num_leds=32, num_samples=512, sample_rate=44100)
 	colors = lavalamp_colors.colorize(leds, num_leds=32)
 
 	for strip in colors:
