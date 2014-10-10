@@ -108,7 +108,7 @@ def process(audio_stream, num_leds, num_samples, sample_rate):
 	# Frequency for a given note number.
 	# def f(n):
 	# 	return (2.0**(1.0/12))**(n-49) * 440.0
-	frequencies = [float(sample_rate*i)/num_samples for i in num_leds]
+	frequencies = [float(sample_rate*i)/num_samples for i in range(num_leds)]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
 	# convolution_matrices = compute_convolution_matrices(frequencies, num_samples=num_samples, sample_rate=sample_rate)
 	# notes = convolve(audio_stream, convolution_matrices)
