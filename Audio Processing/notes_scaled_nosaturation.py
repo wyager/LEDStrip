@@ -5,23 +5,6 @@
 import numpy as np
 from math import pi, atan
 
-# [[float x num_samples] x num frequencies] x 2
-# Used to compute presence of frequencies in signal
-def compute_convolution_matrices(frequencies, num_samples, sample_rate):
-	times = np.arange(0, num_samples, dtype=np.float) / sample_rate
-	sines = np.array([np.sin(times * (2*pi*f)) for f in frequencies])
-	cosines = np.array([np.cos(times * (2*pi*f)) for f in frequencies])
-	return sines, cosines
-
-# Takes an audio sample from stream, and returns an array containing
-# the presence of the frequencies from the generated conv. matrix
-def convolve(audio_stream, convolution_matrices):
-	sin_phase, cos_phase = convolution_matrices
-	def convolve(samples):
-		return np.sqrt(sin_phase.dot(samples)**2 + cos_phase.dot(samples)**2)
-	for l, r in audio_stream:
-		yield convolve(l) + convolve(r) # Do them separately to avoid interference
-
 def fft(audio_stream):
 	def real_fft(im):
 		im = np.abs(np.fft.fft(im))
@@ -110,8 +93,6 @@ def process(audio_stream, num_leds, num_samples, sample_rate):
 	# 	return (2.0**(1.0/12))**(n-49) * 440.0
 	frequencies = [float(sample_rate*i)/num_samples for i in range(num_leds)]
 	human_ear_multipliers = np.array([human_hearing_multiplier(f) for f in frequencies])
-	# convolution_matrices = compute_convolution_matrices(frequencies, num_samples=num_samples, sample_rate=sample_rate)
-	# notes = convolve(audio_stream, convolution_matrices)
 	notes = fft(audio_stream)
 	notes = scale_samples(notes)
 	notes = add_white_noise(notes, amount=2000)
