@@ -13,3 +13,5 @@ You can technically use this software with any microphone interface and it will 
 On OS X, you can use Soundflower or something like that.
 
 I used [Ubuntu Studio](http://ubuntustudio.org). It uses JACK, which provides a nice monitor interface that perfectly replicates the digital signal sent to the speakers. To use some ALSA software (mpd) with Ubuntu Studio, I used `snd-aloop`. I'm pretty sure I read [this article](http://alsa.opensrc.org/Jack_and_Loopback_device_as_Alsa-to-Jack_bridge). It's a bit of black magic. There may have been other steps to make this work. 
+
+If your Linux distro uses PulseAudio, apparently it's pretty easy to set up a monitor interface. Check out https://github.com/wyager/LEDStrip/issues/1
