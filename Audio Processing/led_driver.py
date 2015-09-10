@@ -14,6 +14,9 @@ audio_stream = pa.PyAudio().open(format=pa.paInt16, \
 								channels=2, \
 								rate=44100, \
 								input=True, \
+								# Uncomment and set this using find_input_devices.py
+								# if default input device is not correct
+								#input_device_index=2, \
 								frames_per_buffer=1024)
 
 # Convert the audio data to numbers, num_samples at a time.
